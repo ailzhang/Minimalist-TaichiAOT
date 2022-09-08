@@ -4,6 +4,9 @@ set(TAICHI_AOT_APP_NAME TaichiAot)
 
 project(${TAICHI_AOT_APP_NAME} LANGUAGES C CXX)
 
+# FIXME: Temporary workaround as github CI is insane and we cannot merge taichi PRs.
+set(CMAKE_CXX_STANDARD 17)
+
 # Check for `TAICHI_C_API_INSTALL_DIR`.
 set(TAICHI_C_API_INSTALL_DIR $ENV{TAICHI_C_API_INSTALL_DIR})
 if (NOT EXISTS ${TAICHI_C_API_INSTALL_DIR})
