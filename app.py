@@ -1,6 +1,7 @@
 import argparse
 
 import taichi as ti
+import numpy as np
 
 WIDTH = 16
 HEIGHT = 16
@@ -12,25 +13,29 @@ def compile_graph_aot(arch):
         return
 
     @ti.kernel
-    def chess_board(arr: ti.types.ndarray(field_dim=2)):
-        for i, j in arr:
-            value = ti.cast((j * (WIDTH + 1) + i) % 2, ti.f32)
-            arr[i, j] = value
+    def taichi_add(in_ten: ti.types.ndarray(), out_ten: ti.types.ndarray(), addend: ti.i32):
+        for i, j, k in in_ten:
+            out_ten[i, j, k] = ti.cast(ti.cast(in_ten[i, j, k], ti.i32) + addend, ti.f32)
 
+    in_ten = ti.ndarray(dtype=ti.f32, shape=(320, 320, 4))
+    out_ten = ti.ndarray(dtype=ti.f32, shape=(320, 320, 4))
+    in_ten.from_numpy(np.ones((320, 320, 4), dtype=np.uint8))
+    out_ten.from_numpy(np.ones((320, 320, 4), dtype=np.uint8))
+    addend = 3
 
-    _arr = ti.graph.Arg(ti.graph.ArgKind.NDARRAY,
-                        'arr',
-                        ti.f32,
-                        field_dim=2,
-                        element_shape=())
+    arg_0 = ti.graph.Arg(ti.graph.ArgKind.NDARRAY, "in_ten", dtype=ti.f32, field_dim=3)
+    arg_1 = ti.graph.Arg(ti.graph.ArgKind.NDARRAY, "out_ten", dtype=ti.f32, field_dim=3)
+    arg_2 = ti.graph.Arg(ti.graph.ArgKind.SCALAR, "addend", ti.i32)
+    g = ti.graph.GraphBuilder()
+    g.dispatch(taichi_add, arg_0, arg_1, arg_2)
+    g = g.compile()
 
-    g_builder = ti.graph.GraphBuilder()
-    g_builder.dispatch(chess_board, _arr)
-    run_graph = g_builder.compile()
+    g.run({"in_ten": in_ten, "out_ten": out_ten, "addend": addend})
+    print(out_ten.to_numpy())
 
-    mod = ti.aot.Module(arch)
-    mod.add_graph('g_run', run_graph)
-    mod.save("module", '')
+    m = ti.aot.Module(arch)
+    m.add_graph("taichi_add", g)
+    m.save("module", "")
 
 
 if __name__ == "__main__":
