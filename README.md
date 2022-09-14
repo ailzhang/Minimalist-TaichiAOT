@@ -34,7 +34,7 @@ Note that the Python binding is striped to save you from linking issues.
 ### 3. Generate AOT module with:
 
 ```bash
-python app.py
+python app.py --arch=vulkan
 ```
 
 ### 4. Build this repo with:
